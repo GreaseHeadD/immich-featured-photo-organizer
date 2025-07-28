@@ -51,7 +51,9 @@ __Options__
 | Option                                    | Description                                                       |
 | ----------------------------------------- | ----------------------------------------------------------------- |
 | `-h`, `--help`                            | Show the help message and exit.                                   |
+| `-y`, `--dry-run`                      | Perform a dry run i.e. do not change any featured photos. |
 | `-u`, `--unattended`                      | Do not ask for user confirmation after identifying people. Set this flag to run script as a cronjob. (default: `False`) |
+| `-c`, `--confirmation`                      | Ask confirmation for each person about to be changed. |
 | `-w`, `--with-names`                     | Only process people that are named. |
 | `-W`, `--without-names`                     | Only process people that are __not__ named. |
 | `-s`, `--people-ids` `PEOPLE_IDS`           | Select featured photos for specific people using ids. Format: `-s id1 id2 id3`, `-s id1 -s id2 -s id3` |

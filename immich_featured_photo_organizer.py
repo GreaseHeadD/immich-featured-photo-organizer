@@ -24,7 +24,9 @@ def main():
     root_url = args["api_url"]
     api_key = args["api_key"]
     fetch_chunk_size = args["fetch_chunk_size"]
+    dry_run = args["dry_run"]
     unattended = args["unattended"]
+    ask_confirmation = args["confirmation"]
     with_names = args["with_names"]
     without_names = args["without_names"]
     specific_people_ids = args["people_ids"]
@@ -43,7 +45,9 @@ def main():
     logging.debug("root_url = %s", root_url)
     logging.debug("api_key = %s", api_key)
     logging.debug("fetch_chunk_size = %d", fetch_chunk_size)
+    logging.debug("dry_run = %s", dry_run)
     logging.debug("unattended = %s", unattended)
+    logging.debug("ask_confirmation = %s", ask_confirmation)
     logging.debug("with_names = %s", with_names)
     logging.debug("without_names = %s", without_names)
     logging.debug("specific_people_ids = %s", specific_people_ids)
@@ -116,8 +120,15 @@ def main():
         exit(1)
 
     if not unattended:
-        print("Press Enter to continue, Ctrl+C to abort")
-        input()
+        print("Press Enter to continue, Ctrl+C to abort, 'p' to show the list of identified people.")
+        key_input = input()
+        if key_input == 'p':
+            # so dirty
+            logging.info(', '.join([(person['name'] if (len(person['name']) > 0) else person['id'])
+                             for person in filtered_people]))
+            print("Press Enter to continue or Ctrl+C to abort")
+            input()
+
 
     person_scores = []
     for person in filtered_people:
@@ -185,8 +196,8 @@ def main():
 
                 asset_score = face_size * blur_score * date_score
                 logging.verbose("Score for asset_id %s of person_id %s and person_name %s: %d with face_size=%d, "
-                              "blur_score=%d, date_score=%d", asset_data['asset_id'], person_score['person_id'],
-                              person_score['person_name'], asset_score, face_size, blur_score, date_score)
+                                "blur_score=%d, date_score=%d", asset_data['asset_id'], person_score['person_id'],
+                                person_score['person_name'], asset_score, face_size, blur_score, date_score)
 
             if not random_mode:
                 asset_data['asset_score'] = asset_score
@@ -210,7 +221,19 @@ def main():
                             person_score['person_id'], person_score['person_name'])
             continue
 
-        update_person_featured(root_url, person_score['person_id'], person_score['person_name'], featured_asset_id)
+        if ask_confirmation:
+            print("About to change person_id: %s or person_name: %s to %s" % (person_score['person_id'],
+                  person_score['person_name'], root_url[:-4] + f'photos/{featured_asset_id}'))
+            print("Press y to confirm, Any Key to cancel")
+            choice = input()
+            if choice != 'y':
+                logging.info("Skipping person...")
+                continue
+        if not dry_run:
+            update_person_featured(root_url, person_score['person_id'], person_score['person_name'], featured_asset_id)
+        else:
+            updated_people_names.append(person_score['person_name'] if len(person_score['person_name']) > 0
+                                        else person_score['person_id'])
 
     logging.info("Done!")
     logging.info("Updated the following people: %s", ', '.join(updated_people_names))
@@ -224,9 +247,13 @@ def parseargs():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("api_url", help="The root API URL of Immich, e.g. https://immich.mydomain.com/api/")
     parser.add_argument("api_key", help="The Immich API Key to use")
+    parser.add_argument("-y", "--dry-run", action="store_true",
+                        help="Perform a dry run i.e. do not change any featured photos")
     parser.add_argument("-u", "--unattended", action="store_true",
                         help="Do not ask for user confirmation after identifying people. "
                              "Set this flag to run script as a cronjob.")
+    parser.add_argument("-c", "--confirmation", action="store_true",
+                        help="Ask confirmation for each person about to be changed")
     parser.add_argument("-w", "--with-names", action="store_true",
                         help="Only process people that are named")
     parser.add_argument("-W", "--without-names", action="store_true",
@@ -255,14 +282,14 @@ def parseargs():
                         help="Favor photod around a person's birthday. Can be combined with -t and -T.")
     parser.add_argument("-g", "--sigma-days", type=positive_float, default=1.0,
                         help="Set the sigma days when using -d, -D or -n")
-    parser.add_argument("-c", "--fetch-chunk-size", default=1000, type=int,
+    parser.add_argument("-C", "--fetch-chunk-size", default=1000, type=int,
                         help="Maximum number of assets and people to fetch with a single API call")
     parser.add_argument("-l", "--log-level", default="INFO",
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'VERBOSE'],
                         help="Log level to use")
 
     args = vars(parser.parse_args())
-    if args['with_names'] and  args['without_names']:
+    if args['with_names'] and args['without_names']:
         parser.error("--with-name and --without-name can't be set at the same time")
     elif args['detect_blur'] and args['detect_blur_reversed']:
         parser.error("--detect-blur and --detect-blur-reversed can't be set at the same time")
