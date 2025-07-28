@@ -724,4 +724,3 @@ def update_person_featured(root_url, person_id: str, person_name: str, asset_id:
 
 if __name__ == "__main__":
     main()
-    print(blur_score_cache)
