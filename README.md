@@ -34,12 +34,12 @@ __Current compatibility:__ Immich v1.136.x and up
     ```
 3. Run the script
     ```
-    usage: immich-featured-photo-organizer.py api_url api_key [options]
+    usage: immich_featured_photo_organizer.py api_url api_key [options]
     ```
 
 __Plain example without optional arguments:__
 ```bash
-python3 ./immich-featured-photo-organizer.py https://immich.mydomain.com thisIsMyApiKeyCopiedFromImmichWebGui
+python3 ./immich_featured_photo_organizer.py https://immich.mydomain.com thisIsMyApiKeyCopiedFromImmichWebGui
 ```
 
 __API key__
@@ -72,22 +72,22 @@ __note: the `--people-ids`, `--people-names` and `--favorite-people` options CAN
 ### Examples
 Select the most recent non-blurry photo for everyone (resource intensive):
 ```bash
-immich-featured-photo-organizer.py api_url api_key -bt
+immich_featured_photo_organizer.py api_url api_key -bt
 ```
 
 Select a random birthday photo for everyone:
 ```bash
-immich-featured-photo-organizer.py api_url api_key -rn
+immich_featured_photo_organizer.py api_url api_key -rn
 ```
 
 Select a photo for "My Mom" and "My Dad" around christmas:
 ```bash
-immich-featured-photo-organizer.py api_url api_key -S "My Mom" "My Dad" -d 12-25
+immich_featured_photo_organizer.py api_url api_key -S "My Mom" "My Dad" -d 12-25
 ```
 
 Select a low-pixel photo for Mark:
 ```bash
-immich-featured-photo-organizer.py api_url api_key -p -S Mark
+immich_featured_photo_organizer.py api_url api_key -p -S Mark
 ```
 
 ## How it works
