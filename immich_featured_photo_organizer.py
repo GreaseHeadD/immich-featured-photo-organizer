@@ -25,6 +25,8 @@ def main():
     api_key = args["api_key"]
     fetch_chunk_size = args["fetch_chunk_size"]
     unattended = args["unattended"]
+    with_names = args["with_names"]
+    without_names = args["without_names"]
     specific_people_ids = args["people_ids"]
     specific_people_names = args["people_names"]
     favorite_people = args["favorite_people"]
@@ -42,6 +44,8 @@ def main():
     logging.debug("api_key = %s", api_key)
     logging.debug("fetch_chunk_size = %d", fetch_chunk_size)
     logging.debug("unattended = %s", unattended)
+    logging.debug("with_names = %s", with_names)
+    logging.debug("without_names = %s", without_names)
     logging.debug("specific_people_ids = %s", specific_people_ids)
     logging.debug("specific_people_names = %s", specific_people_names)
     logging.debug("favorite_people = %s", favorite_people)
@@ -91,18 +95,23 @@ def main():
         exit(1)
 
     logging.info("Sorting people that are named...")
-    people_with_names = filter_people_data(people_data, birthday_bias, favorite_people)
+    filtered_people = filter_people_data(people_data, birthday_bias, favorite_people, with_names, without_names)
 
-    extra_info = ""
-    if birthday_bias and favorite_people:
-        extra_info = "with birthdays and being favorite"
-    elif birthday_bias and not favorite_people:
-        extra_info = "with birthdays"
-    elif favorite_people:
-        extra_info = "being favorite"
-    logging.info("%d people identified %s", len(people_with_names), extra_info)
+    # messy, i know
+    extra_info = []
+    if birthday_bias:
+        extra_info.append("birthdays")
+    if favorite_people:
+        extra_info.append("favorites")
+    if with_names:
+        extra_info.append("names")
+    if without_names:
+        extra_info.append("without names")
+    extra_info = ', '.join(extra_info) if len(extra_info) > 0 else ""
 
-    if len(people_with_names) == 0:
+    logging.info("%d people identified %s", len(filtered_people), extra_info)
+
+    if len(filtered_people) == 0:
         logging.error("Cannot proceed with 0 people identified.")
         exit(1)
 
@@ -111,7 +120,7 @@ def main():
         input()
 
     person_scores = []
-    for person in people_with_names:
+    for person in filtered_people:
         person_score = {}
         person_score['person_id'] = person['id']
         person_score['person_name'] = person['name']
@@ -218,6 +227,10 @@ def parseargs():
     parser.add_argument("-u", "--unattended", action="store_true",
                         help="Do not ask for user confirmation after identifying people. "
                              "Set this flag to run script as a cronjob.")
+    parser.add_argument("-w", "--with-names", action="store_true",
+                        help="Only process people that are named")
+    parser.add_argument("-W", "--without-names", action="store_true",
+                        help="Only process people that are not named")
     parser.add_argument("-s", "--people-ids", action="extend", type=str, nargs="*", default=[],
                         help="Select featured photos for specific people using ids")
     parser.add_argument("-S", "--people-names", action="extend", type=str, nargs='*', default=[],
@@ -247,7 +260,14 @@ def parseargs():
     parser.add_argument("-l", "--log-level", default="INFO",
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'VERBOSE'],
                         help="Log level to use")
+
     args = vars(parser.parse_args())
+    if args['with_names'] and  args['without_names']:
+        parser.error("--with-name and --without-name can't be set at the same time")
+    elif args['detect_blur'] and args['detect_blur_reversed']:
+        parser.error("--detect-blur and --detect-blur-reversed can't be set at the same time")
+    elif args['recency_bias'] and args['recency_bias_reversed']:
+        parser.error("--recency-bias and --recency-bias-reversed can't be set at the same time")
 
     add_logging_level('VERBOSE', logging.DEBUG - 5)
     # set up logger to log in logfmt format
@@ -499,11 +519,13 @@ def is_date_asset(asset_datetime_str: str, target_date_str: str, proximity_days)
     return wrapped_diff <= proximity_days
 
 
-def filter_people_data(people_data: list, birthday_bias: bool, favorite_people: bool) -> list:
+def filter_people_data(people_data: list, birthday_bias: bool, favorite_people: bool, with_names: bool,
+                       without_names: bool) -> list:
     result = []
     for person in people_data:
-        if len(person['name']) > 0 and ((not birthday_bias or person['birthDate']) and (not favorite_people
-                                                                                        or person['isFavorite'])):
+        has_name = len(person['name']) > 0
+        if (not with_names or has_name) and (not without_names or not has_name) and \
+                (not birthday_bias or person['birthDate']) and (not favorite_people or person['isFavorite']):
             result.append(person)
     return result
 
@@ -717,7 +739,7 @@ def update_person_featured(root_url, person_id: str, person_name: str, asset_id:
     try:
         r = requests.put(root_url + api_endpoint + f'/{person_id}', json=data, **requests_kwargs)
         if r.status_code in [200, 201]:
-            updated_people_names.append(person_name)
+            updated_people_names.append(person_name if len(person_name) > 0 else person_id)
     except requests.exceptions.HTTPError as e:
         logging.error("Could not update the featured photo for id: '%s' name: '%s'", person_id, person_name)
 
