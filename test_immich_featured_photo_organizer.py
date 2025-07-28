@@ -5,25 +5,17 @@ import immich_featured_photo_organizer
 
 PEOPLE_DATA = [
     {'id': '393da4b3-d26e-4185-8a11-60db04b8b900', 'name': 'John Doe', 'birthDate': '2003-01-02',
-     'thumbnailPath':
-         '/photos/thumbs/0b431918-436e-45d7-889f-2ff0c7138080/39/3d/393da4b3-d26e-4185-8a11-60db04b8b900.jpeg',
-     'isHidden': False, 'isFavorite': True, 'updatedAt': '2025-07-26T16:34:41.017Z'},
+     'isHidden': False, 'isFavorite': True},
     {'id': '9740d76f-5a9a-4928-bffd-0c46424a5abb', 'name': 'Jane Doe', 'birthDate': '2007-04-06',
-     'thumbnailPath':
-         '/photos/thumbs/0b431918-436e-45d7-889f-2ff0c7138080/97/40/9740d76f-5a9a-4928-bffd-0c46424a5abb.jpeg',
-     'isHidden': False, 'isFavorite': False, 'updatedAt': '2025-07-26T16:34:41.210Z'},
+     'isHidden': False, 'isFavorite': False},
     {'id': 'f914f57e-8400-41b1-b52b-49b6291ea66b', 'name': 'Jake', 'birthDate': None,
-     'thumbnailPath':
-         '/photos/thumbs/0b431918-436e-45d7-889f-2ff0c7138080/f9/14/f914f57e-8400-41b1-b52b-49b6291ea66b.jpeg',
-     'isHidden': False, 'isFavorite': True, 'updatedAt': '2025-07-26T16:34:41.089Z'},
+     'isHidden': False, 'isFavorite': True},
     {'id': '45eedb1f-b175-475c-9293-392161648ce5', 'name': 'Olivia', 'birthDate': None,
-     'thumbnailPath':
-         '/photos/thumbs/0b431918-436e-45d7-889f-2ff0c7138080/45/ee/45eedb1f-b175-475c-9293-392161648ce5.jpeg',
-     'isHidden': False, 'isFavorite': False, 'updatedAt': '2025-07-26T16:34:41.242Z'},
+     'isHidden': False, 'isFavorite': False},
     {'id': '0b6c42f4-29e4-42c4-83e7-a0bb8a04e4a7', 'name': '', 'birthDate': None,
-     'thumbnailPath':
-         '/photos/thumbs/0b431918-436e-45d7-889f-2ff0c7138080/0b/6c/0b6c42f4-29e4-42c4-83e7-a0bb8a04e4a7.jpeg',
-     'isHidden': False, 'isFavorite': False, 'updatedAt': '2025-07-22T18:22:48.398Z'}
+     'isHidden': False, 'isFavorite': False},
+    {'id': '0b6c42f4-29e4-42c4-83e7-a0bb8a04e4a7', 'name': '', 'birthDate': None,
+     'isHidden': False, 'isFavorite': True}
 ]
 
 
@@ -260,13 +252,16 @@ def test_is_date_asset(asset_date, target_date, proximity_days, expected):
     assert result == expected
 
 
-@pytest.mark.parametrize("birthday_bias, favorite_people, expected", [
-    (False, False, PEOPLE_DATA[:-1]),
-    (True, False, PEOPLE_DATA[:2]),
-    (False, True, PEOPLE_DATA[0:3:2]),
-    (True, True, PEOPLE_DATA[:1]),
+@pytest.mark.parametrize("birthday_bias, favorite_people, with_names, without_names, expected", [
+    (False, False, True, False, PEOPLE_DATA[:-2]),
+    (True, False, True, False, PEOPLE_DATA[:2]),
+    (False, True, True, False, PEOPLE_DATA[0:3:2]),
+    (True, True, True, False, PEOPLE_DATA[:1]),
+    (False, False, False, True, PEOPLE_DATA[-2:]),
+    (False, False, False, False, PEOPLE_DATA),
+    (False, True, False, True, PEOPLE_DATA[-1:]),
 ])
-def test_filter_people_data(birthday_bias, favorite_people, expected):
-    result = immich_featured_photo_organizer.filter_people_data(PEOPLE_DATA, birthday_bias, favorite_people)
+def test_filter_people_data(birthday_bias, favorite_people, with_names, without_names, expected):
+    result = immich_featured_photo_organizer.filter_people_data(PEOPLE_DATA, birthday_bias, favorite_people, with_names, without_names)
     print(result)
     assert result == expected

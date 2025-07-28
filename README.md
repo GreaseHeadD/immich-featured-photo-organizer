@@ -11,7 +11,7 @@ This tool can update featured photos based on the following properties:
 - by recency/seniority
 - random
 
-The operation can be performend on all people, favorite people and by specific ids and names.
+The operation can be performend on all detected people, people that are named, favorite people, people that have birthdays set and by specific ids and names.
 
 __Current compatibility:__ Immich v1.136.x and up
 
@@ -52,6 +52,8 @@ __Options__
 | ----------------------------------------- | ----------------------------------------------------------------- |
 | `-h`, `--help`                            | Show the help message and exit.                                   |
 | `-u`, `--unattended`                      | Do not ask for user confirmation after identifying people. Set this flag to run script as a cronjob. (default: `False`) |
+| `-w`, `--with-names`                     | Only process people that are named. |
+| `-W`, `--without-names`                     | Only process people that are __not__ named. |
 | `-s`, `--people-ids` `PEOPLE_IDS`           | Select featured photos for specific people using ids. Format: `-s id1 id2 id3`, `-s id1 -s id2 -s id3` |
 | `-S`, `--people-names` `PEOPLE_NAMES`       | Select featured photos for specific people using names. Format: `-S name1 "name2 surname" name3`, `-S name1 -S "name2 surname" -S name3` |
 | `-f`, `--favorite-people`                     | Select featured photos for favorite people. |
@@ -67,12 +69,17 @@ __Options__
 | `-C`, `--fetch-chunk-size FETCH_CHUNK_SIZE` | Maximum number of assets and people to fetch per API call. (default: `1000`) |
 | `-l`, `--log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG,VERBOSE}` | Set the logging level. (default: `INFO`) |
 
-__note: the `--people-ids`, `--people-names` and `--favorite-people` options CAN be mixed together__
+__note: the `--with-names or --without-names`, `--people-ids`, `--people-names` and `--favorite-people` and `--birthday-bias` options CAN be mixed together__
 
 ### Examples
-Select the most recent non-blurry photo for everyone (resource intensive):
+Select the photo with the highest resolution for every person, including unnamed people:
 ```bash
-immich_featured_photo_organizer.py api_url api_key -bt
+immich_featured_photo_organizer.py api_url api_key
+```
+
+Select the most recent non-blurry photo for every person with a name (resource intensive):
+```bash
+immich_featured_photo_organizer.py api_url api_key -wbt
 ```
 
 Select a random birthday photo for everyone:
@@ -131,7 +138,7 @@ With only the `--detect-blur` option set, executing the script took 1032.22 seco
 
 ## Notes
 
-- This scripts only processes people that have a name and are non-hidden, if you wish to process all detected people please open an issue.
+- This scripts only processes people that are non-hidden, if you wish to process hidden people too please open an issue.
 
 - Only assets with timeline visibility are processed. Archived, locked, hidden and trashed assets are not included.
 
