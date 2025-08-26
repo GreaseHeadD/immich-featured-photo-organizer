@@ -92,13 +92,13 @@ def main():
 
     logging.info("Requesting all people")
     people_data = fetch_people_data(root_url, person_ids=specific_people_ids, person_names=specific_people_names)
-    logging.info("%d named people found", len(people_data))
+    logging.info("%d people found", len(people_data))
 
     if people_data == [{}]:
         logging.error("Cannot proceed with 0 people found.")
         exit(1)
 
-    logging.info("Sorting people that are named...")
+    logging.info("Filtering found people...")
     filtered_people = filter_people_data(people_data, birthday_bias, favorite_people, with_names, without_names)
 
     # messy, i know
@@ -391,7 +391,14 @@ def calculate_face_size(asset_data: dict, p_id: str) -> float:
     # resize factor needs to be calculated because Immich doesn't send the full image to
     # the ML server.
     ml_image_size = asset_person_data['faces'][0]['imageWidth'] * asset_person_data['faces'][0]['imageHeight']
-    real_image_size = asset_data['exifInfo']['exifImageWidth'] * asset_data['exifInfo']['exifImageHeight']
+    if not (asset_data['exifInfo']['exifImageWidth'] is None or asset_data['exifInfo']['exifImageHeight'] is None):
+        real_image_size = asset_data['exifInfo']['exifImageWidth'] * asset_data['exifInfo']['exifImageHeight']
+    else:
+        # ideally we manually calculate the real size
+        # however that would be an expensive operation because the whole original image
+        # would need to be downloaded.
+        # for now this will not be implemented.
+        real_image_size = ml_image_size
     resize_factor = real_image_size / ml_image_size
     return calculate_real_face_size(box_x1, box_x2, box_y1, box_y2, resize_factor)
 
